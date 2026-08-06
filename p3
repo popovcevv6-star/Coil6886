@@ -3,3 +3,5 @@ local char = player.Character or player.CharacterAdded:Wait()
 
 local hum = game.Players.LocalPlayer.Character.Humanoid
 hum.WalkSpeed = 32
+local hum = game.Player.LocalPlayer.Character.Humanoid
+hum.JumpPower = 100
