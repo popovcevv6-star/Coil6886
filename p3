@@ -1,9 +1,48 @@
-local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
+local sg = Instance.new("ScreenGui", game.CoreGui)
 
-RunService.RenderStepped:Connect(function()
-local char = player.Character
-if char and char:FindFirstChild("HumanoidRootPart") then
-char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(450), 0)
-end
+local o = Instance.new("TextButton", sg)
+o.Size, o.Position, o.Text = UDim2.new(0, 50, 0, 50), UDim2.new(0.5, -25, 0.4, 0), "⚙️"
+o.BackgroundColor3, o.Active, o.Draggable = Color3.fromRGB(40,40,40), true, true
+Instance.new("UICorner", o).CornerRadius = UDim.new(1, 0)
+
+local f = Instance.new("Frame", sg)
+f.Size, f.Position, f.Visible = UDim2.new(0, 160, 0, 260), UDim2.new(0.5, -80, 0.4, -130), false
+f.BackgroundColor3, f.Active, f.Draggable = Color3.fromRGB(30, 30, 30), true, true
+
+o.MouseButton1Click:Connect(function()
+    f.Visible = not f.Visible
 end)
+
+local names = {
+    "speed walk",
+    "jump power",
+    "Function 3",
+    "Function 4",
+    "Function 5",
+    "Function 6"
+}
+
+for i = 1, 6 do
+    local b = Instance.new("TextButton", f)
+    b.Size, b.Position = UDim2.new(0, 140, 0, 35), UDim2.new(0, 10, 0, (i - 1) * 40 + 10)
+    b.Text, b.BackgroundColor3, b.TextColor3 = names[i], Color3.fromRGB(60,60,60), Color3.new(1,1,1)
+    
+    b.MouseButton1Click:Connect(function()
+        local char = game.Players.LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        
+        if i == 1 then
+            if hum then hum.WalkSpeed = 50 end
+        elseif i == 2 then
+            if hum then hum.JumpPower = 120 end
+        elseif i == 3 then
+            
+        elseif i == 4 then
+            
+        elseif i == 5 then
+            
+        elseif i == 6 then
+            
+        end
+    end)
+end
