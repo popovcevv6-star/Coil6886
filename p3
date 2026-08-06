@@ -1,10 +1,12 @@
 local sg = Instance.new("ScreenGui", game.CoreGui)
 
+-- Кнопка открытия/закрытия меню
 local o = Instance.new("TextButton", sg)
 o.Size, o.Position, o.Text = UDim2.new(0, 50, 0, 50), UDim2.new(0.5, -25, 0.4, 0), "⚙️"
 o.BackgroundColor3, o.Active, o.Draggable = Color3.fromRGB(40,40,40), true, true
 Instance.new("UICorner", o).CornerRadius = UDim.new(1, 0)
 
+-- Главная рамка (Frame)
 local f = Instance.new("Frame", sg)
 f.Size, f.Position, f.Visible = UDim2.new(0, 160, 0, 260), UDim2.new(0.5, -80, 0.4, -130), false
 f.BackgroundColor3, f.Active, f.Draggable = Color3.fromRGB(30, 30, 30), true, true
@@ -13,13 +15,14 @@ o.MouseButton1Click:Connect(function()
     f.Visible = not f.Visible
 end)
 
+-- Названия для кнопок
 local names = {
-    "speed walk",
-    "jump power",
-    "Function 3",
-    "Function 4",
-    "Function 5",
-    "Function 6"
+    "Speed Boost",    -- i = 1
+    "High Jump",      -- i = 2
+    "Noclip (1 sec)", -- i = 3
+    "Teleport Up",    -- i = 4
+    "Infinite Jump",  -- i = 5
+    "Reset Stats"     -- i = 6
 }
 
 for i = 1, 6 do
@@ -29,20 +32,33 @@ for i = 1, 6 do
     
     b.MouseButton1Click:Connect(function()
         local char = game.Players.LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if not char then return end
         
         if i == 1 then
-            if hum then hum.WalkSpeed = 50 end
+            -- Скорость 100
+            char.Humanoid.WalkSpeed = 100
+            
         elseif i == 2 then
-            if hum then hum.JumpPower = 120 end
+            -- Высокий прыжок
+            char.Humanoid.UseJumpPower = true
+            char.Humanoid.JumpPower = 120
+            
         elseif i == 3 then
+            -- Проход сквозь стены (выключает коллизию у главной детали)
+            char.HumanoidRootPart.CanCollide = false
             
         elseif i == 4 then
+            -- Телепорт на 20 блоков вверх
+            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 20, 0)
             
         elseif i == 5 then
+            -- Бесконечный прыжок в воздухе
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             
         elseif i == 6 then
-            
+            -- Сброс параметров до стандартных
+            char.Humanoid.WalkSpeed = 16
+            char.Humanoid.JumpPower = 50
         end
     end)
 end
