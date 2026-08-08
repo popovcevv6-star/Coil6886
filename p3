@@ -165,9 +165,6 @@ btnFling.MouseButton1Click:Connect(function()
 end)
 
 local espActive = false
-local espFolder = Instance.new("Folder")
-espFolder.Name = "ESPFolder"
-espFolder.Parent = ScreenGui
 
 local function getMM2Color(plr)
 	local char = plr.Character
@@ -183,60 +180,24 @@ local function getMM2Color(plr)
 end
 
 local function updateESP()
-	espFolder:ClearAllChildren()
-	if not espActive then return end
-
-	local cam = Workspace.CurrentCamera
-	if not cam then return end
-
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= lp and plr.Character then
 			local char = plr.Character
-			local hum = char:FindFirstChild("Humanoid")
+			local hl = char:FindFirstChild("ESPHighlight")
 
-			if hum and hum.Health > 0 then
-				local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
-				local anyVisible = false
-
-				for _, part in ipairs(char:GetChildren()) do
-					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-						local cframe = part.CFrame
-						local size = part.Size / 2
-						local corners = {
-							cframe * Vector3.new(-size.X, -size.Y, -size.Z),
-							cframe * Vector3.new(-size.X, -size.Y, size.Z),
-							cframe * Vector3.new(-size.X, size.Y, -size.Z),
-							cframe * Vector3.new(-size.X, size.Y, size.Z),
-							cframe * Vector3.new(size.X, -size.Y, -size.Z),
-							cframe * Vector3.new(size.X, -size.Y, size.Z),
-							cframe * Vector3.new(size.X, size.Y, -size.Z),
-							cframe * Vector3.new(size.X, size.Y, size.Z)
-						}
-
-						for _, corner in ipairs(corners) do
-							local screenPos, vis = cam:WorldToViewportPoint(corner)
-							if vis then
-								anyVisible = true
-								minX = math.min(minX, screenPos.X)
-								minY = math.min(minY, screenPos.Y)
-								maxX = math.max(maxX, screenPos.X)
-								maxY = math.max(maxY, screenPos.Y)
-							end
-						end
-					end
+			if espActive then
+				if not hl then
+					hl = Instance.new("Highlight")
+					hl.Name = "ESPHighlight"
+					hl.FillTransparency = 1
+					hl.OutlineTransparency = 0
+					hl.Adornee = char
+					hl.Parent = char
 				end
-
-				if anyVisible then
-					local box = Instance.new("Frame")
-					box.Size = UDim2.new(0, maxX - minX, 0, maxY - minY)
-					box.Position = UDim2.new(0, minX, 0, minY)
-					box.BackgroundTransparency = 1
-					box.Parent = espFolder
-
-					local stroke = Instance.new("UIStroke")
-					stroke.Thickness = 1.5
-					stroke.Color = getMM2Color(plr)
-					stroke.Parent = box
+				hl.OutlineColor = getMM2Color(plr)
+			else
+				if hl then
+					hl:Destroy()
 				end
 			end
 		end
@@ -249,7 +210,11 @@ btnEsp.MouseButton1Click:Connect(function()
 	espActive = not espActive
 	btnEsp.Text = "esp [" .. (espActive and "ON" or "OFF") .. "]"
 	if not espActive then
-		espFolder:ClearAllChildren()
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr.Character and plr.Character:FindFirstChild("ESPHighlight") then
+				plr.Character.ESPHighlight:Destroy()
+			end
+		end
 	end
 end)
 
