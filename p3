@@ -20,8 +20,12 @@ MainFrame.Parent = ScreenGui
 
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
-MainStroke.Color = Color3.fromRGB(0, 170, 255)
 MainStroke.Parent = MainFrame
+
+RunService.RenderStepped:Connect(function()
+	local hue = (tick() % 5) / 5
+	MainStroke.Color = Color3.fromHSV(hue, 1, 1)
+end)
 
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1, -10, 1, -10)
@@ -47,8 +51,8 @@ local function createBtn(text)
 	btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	btn.BorderSizePixel = 0
 	btn.Text = text .. " [OFF]"
-	btn.Font = Enum.Font.SourceSans
-	btn.TextSize = 15
+	btn.Font = Enum.Font.SourceSansLight
+	btn.TextSize = 16
 	btn.TextColor3 = Color3.fromRGB(0, 170, 255)
 	btn.Parent = Scroll
 
@@ -167,12 +171,12 @@ local function updateESP()
 			local hum = char:FindFirstChild("Humanoid")
 
 			if hrp and hum and hum.Health > 0 then
-				local headPos, headVisible = cam:WorldToViewportPoint(hrp.Position + Vector3.new(0, 2.5, 0))
-				local legPos, legVisible = cam:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+				local headPos, headVisible = cam:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
+				local legPos, legVisible = cam:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
 
 				if headVisible or legVisible then
 					local sizeY = math.abs(headPos.Y - legPos.Y)
-					local sizeX = sizeY * 0.5
+					local sizeX = sizeY * 0.6
 					local posX = headPos.X - sizeX / 2
 					local posY = headPos.Y
 
