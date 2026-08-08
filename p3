@@ -20,6 +20,7 @@ MainFrame.Parent = ScreenGui
 
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
+MainStroke.Color = Color3.fromRGB(0, 170, 255)
 MainStroke.Parent = MainFrame
 
 local Scroll = Instance.new("ScrollingFrame")
@@ -40,36 +41,21 @@ UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	Scroll.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
 end)
 
-local rainbowObjects = {MainStroke}
-
-RunService.RenderStepped:Connect(function()
-	local hue = (tick() % 5) / 5
-	local color = Color3.fromHSV(hue, 1, 1)
-	for _, obj in ipairs(rainbowObjects) do
-		if obj:IsA("UIStroke") then
-			obj.Color = color
-		elseif obj:IsA("TextButton") then
-			obj.TextColor3 = color
-		end
-	end
-end)
-
 local function createBtn(text)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -8, 0, 40)
 	btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	btn.BorderSizePixel = 0
 	btn.Text = text .. " [OFF]"
-	btn.Font = Enum.Font.SourceSansBold
-	btn.TextSize = 16
+	btn.Font = Enum.Font.SourceSans
+	btn.TextSize = 15
+	btn.TextColor3 = Color3.fromRGB(0, 170, 255)
 	btn.Parent = Scroll
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 1.5
+	stroke.Thickness = 1
+	stroke.Color = Color3.fromRGB(0, 170, 255)
 	stroke.Parent = btn
-
-	table.insert(rainbowObjects, stroke)
-	table.insert(rainbowObjects, btn)
 
 	return btn
 end
@@ -81,25 +67,30 @@ local btnSpin = createBtn("spinbot 360")
 local btnSpeed = createBtn("speed x2")
 
 local shakerActive = false
-local shakerThread
 
 btnShaker.MouseButton1Click:Connect(function()
 	shakerActive = not shakerActive
 	btnShaker.Text = "camera shaker [" .. (shakerActive and "ON" or "OFF") .. "]"
+end)
+
+RunService.RenderStepped:Connect(function()
 	if shakerActive then
-		shakerThread = task.spawn(function()
-			while shakerActive do
-				RunService.RenderStepped:Wait()
-				local cam = Workspace.CurrentCamera
-				if cam then
-					cam.CFrame = cam.CFrame * CFrame.Angles(
-						math.rad(math.random(-1, 1)),
-						math.rad(math.random(-1, 1)),
-						math.rad(math.random(-1, 1))
-					)
+		local myChar = lp.Character
+		local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
+		if myHrp then
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+					local tHrp = p.Character.HumanoidRootPart
+					if (myHrp.Position - tHrp.Position).Magnitude <= 20 then
+						tHrp.CFrame = tHrp.CFrame * CFrame.Angles(
+							math.rad(math.random(-15, 15)),
+							math.rad(math.random(-15, 15)),
+							math.rad(math.random(-15, 15))
+						)
+					end
 				end
 			end
-		end)
+		end
 	end
 end)
 
@@ -176,15 +167,18 @@ local function updateESP()
 			local hum = char:FindFirstChild("Humanoid")
 
 			if hrp and hum and hum.Health > 0 then
-				local pos, visible = cam:WorldToViewportPoint(hrp.Position)
-				if visible then
-					local scaleFactor = 1000 / pos.Z
-					local sizeY = math.clamp(scaleFactor * 2.5, 10, 500)
-					local sizeX = sizeY * 0.6
+				local headPos, headVisible = cam:WorldToViewportPoint(hrp.Position + Vector3.new(0, 2.5, 0))
+				local legPos, legVisible = cam:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+
+				if headVisible or legVisible then
+					local sizeY = math.abs(headPos.Y - legPos.Y)
+					local sizeX = sizeY * 0.5
+					local posX = headPos.X - sizeX / 2
+					local posY = headPos.Y
 
 					local box = Instance.new("Frame")
 					box.Size = UDim2.new(0, sizeX, 0, sizeY)
-					box.Position = UDim2.new(0, pos.X - sizeX / 2, 0, pos.Y - sizeY / 2)
+					box.Position = UDim2.new(0, posX, 0, posY)
 					box.BackgroundTransparency = 1
 					box.Parent = espFolder
 
