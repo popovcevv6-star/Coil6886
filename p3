@@ -9,6 +9,24 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = lp:WaitForChild("PlayerGui")
 
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Size = UDim2.new(0, 45, 0, 45)
+OpenBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+OpenBtn.Text = "⚡"
+OpenBtn.TextSize = 22
+OpenBtn.Parent = ScreenGui
+OpenBtn.Active = true
+OpenBtn.Draggable = true
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius = UDim.new(1, 0)
+OpenCorner.Parent = OpenBtn
+
+local OpenStroke = Instance.new("UIStroke")
+OpenStroke.Thickness = 2
+OpenStroke.Parent = OpenBtn
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 220, 0, 260)
 MainFrame.Position = UDim2.new(0.4, 0, 0.3, 0)
@@ -16,6 +34,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
 
 local MainStroke = Instance.new("UIStroke")
@@ -24,7 +43,13 @@ MainStroke.Parent = MainFrame
 
 RunService.RenderStepped:Connect(function()
 	local hue = (tick() % 5) / 5
-	MainStroke.Color = Color3.fromHSV(hue, 1, 1)
+	local rainbow = Color3.fromHSV(hue, 1, 1)
+	MainStroke.Color = rainbow
+	OpenStroke.Color = rainbow
+end)
+
+OpenBtn.MouseButton1Click:Connect(function()
+	MainFrame.Visible = not MainFrame.Visible
 end)
 
 local Scroll = Instance.new("ScrollingFrame")
@@ -167,22 +192,44 @@ local function updateESP()
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= lp and plr.Character then
 			local char = plr.Character
-			local hrp = char:FindFirstChild("HumanoidRootPart")
 			local hum = char:FindFirstChild("Humanoid")
 
-			if hrp and hum and hum.Health > 0 then
-				local centerPos, visible = cam:WorldToViewportPoint(hrp.Position)
+			if hum and hum.Health > 0 then
+				local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
+				local anyVisible = false
 
-				if visible then
-					local distance = (cam.CFrame.Position - hrp.Position).Magnitude
-					local factor = 1000 / distance
+				for _, part in ipairs(char:GetChildren()) do
+					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+						local cframe = part.CFrame
+						local size = part.Size / 2
+						local corners = {
+							cframe * Vector3.new(-size.X, -size.Y, -size.Z),
+							cframe * Vector3.new(-size.X, -size.Y, size.Z),
+							cframe * Vector3.new(-size.X, size.Y, -size.Z),
+							cframe * Vector3.new(-size.X, size.Y, size.Z),
+							cframe * Vector3.new(size.X, -size.Y, -size.Z),
+							cframe * Vector3.new(size.X, -size.Y, size.Z),
+							cframe * Vector3.new(size.X, size.Y, -size.Z),
+							cframe * Vector3.new(size.X, size.Y, size.Z)
+						}
 
-					local sizeY = math.clamp(factor * 5, 20, 500)
-					local sizeX = sizeY * 0.65
+						for _, corner in ipairs(corners) do
+							local screenPos, vis = cam:WorldToViewportPoint(corner)
+							if vis then
+								anyVisible = true
+								minX = math.min(minX, screenPos.X)
+								minY = math.min(minY, screenPos.Y)
+								maxX = math.max(maxX, screenPos.X)
+								maxY = math.max(maxY, screenPos.Y)
+							end
+						end
+					end
+				end
 
+				if anyVisible then
 					local box = Instance.new("Frame")
-					box.Size = UDim2.new(0, sizeX, 0, sizeY)
-					box.Position = UDim2.new(0, centerPos.X - sizeX / 2, 0, centerPos.Y - sizeY / 2)
+					box.Size = UDim2.new(0, maxX - minX, 0, maxY - minY)
+					box.Position = UDim2.new(0, minX, 0, minY)
 					box.BackgroundTransparency = 1
 					box.Parent = espFolder
 
