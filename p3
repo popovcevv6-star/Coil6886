@@ -171,18 +171,18 @@ local function updateESP()
 			local hum = char:FindFirstChild("Humanoid")
 
 			if hrp and hum and hum.Health > 0 then
-				local headPos, headVisible = cam:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
-				local legPos, legVisible = cam:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
+				local centerPos, visible = cam:WorldToViewportPoint(hrp.Position)
 
-				if headVisible or legVisible then
-					local sizeY = math.abs(headPos.Y - legPos.Y)
-					local sizeX = sizeY * 0.6
-					local posX = headPos.X - sizeX / 2
-					local posY = headPos.Y
+				if visible then
+					local distance = (cam.CFrame.Position - hrp.Position).Magnitude
+					local factor = 1000 / distance
+
+					local sizeY = math.clamp(factor * 5, 20, 500)
+					local sizeX = sizeY * 0.65
 
 					local box = Instance.new("Frame")
 					box.Size = UDim2.new(0, sizeX, 0, sizeY)
-					box.Position = UDim2.new(0, posX, 0, posY)
+					box.Position = UDim2.new(0, centerPos.X - sizeX / 2, 0, centerPos.Y - sizeY / 2)
 					box.BackgroundTransparency = 1
 					box.Parent = espFolder
 
