@@ -9,7 +9,7 @@ ScreenGui.Name = "CustomMenuGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = lp:WaitForChild("PlayerGui")
 
--- Кнопка открытия (Кружок с молнией)
+-- Кнопка открытия
 local OpenBtn = Instance.new("TextButton")
 OpenBtn.Size = UDim2.new(0, 45, 0, 45)
 OpenBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
@@ -31,7 +31,7 @@ local OpenStroke = Instance.new("UIStroke")
 OpenStroke.Thickness = 2
 OpenStroke.Parent = OpenBtn
 
--- Главное меню (Полупрозрачное, серое)
+-- Главное меню
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 200, 0, 200)
 MainFrame.Position = UDim2.new(0.35, 0, 0.3, 0)
@@ -51,7 +51,7 @@ local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
 MainStroke.Parent = MainFrame
 
--- Качественная радужная обводка (только рамки)
+-- Радужная обводка
 RunService.RenderStepped:Connect(function()
 	local hue = (tick() % 4) / 4
 	local rainbow = Color3.fromHSV(hue, 1, 1)
@@ -80,7 +80,6 @@ UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	Scroll.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
 end)
 
--- Конструктор кнопок
 local function createBtn(text)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -6, 0, 38)
@@ -104,55 +103,80 @@ local btnTpTree = createBtn("tp D.")
 local btnSpeed = createBtn("speedhack")
 local btnTpRabbit = createBtn("tp Z.")
 
--- Поиск и телепорт к ближайшему объекту
-local function tpToNearest(searchNames)
+-- Безопасный телепорт к дефолтным деревьям
+btnTpTree.MouseButton1Click:Connect(function()
 	local char = lp.Character
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	local closestObj = nil
+	local closestTree = nil
 	local shortestDist = math.huge
 
 	for _, obj in ipairs(Workspace:GetDescendants()) do
-		local matches = false
-		for _, name in ipairs(searchNames) do
-			if string.find(string.lower(obj.Name), string.lower(name)) then
-				matches = true
-				break
-			end
-		end
+		local name = string.lower(obj.Name)
+		
+		-- Фильтруем исключения (столы, постройки, большие деревья)
+		local isExcluded = string.find(name, "bench") or string.find(name, "table") or string.find(name, "craft") 
+			or string.find(name, "big") or string.find(name, "giant") or string.find(name, "large") 
+			or string.find(name, "build") or string.find(name, "storage")
 
-		if matches then
-			local targetPart = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
-			if targetPart then
-				local dist = (hrp.Position - targetPart.Position).Magnitude
+		-- Ищем только обычные/маленькие деревья
+		local isSmallTree = (string.find(name, "tree") or string.find(name, "smalltree") or string.find(name, "birch") or string.find(name, "pine")) and not isExcluded
+
+		if isSmallTree then
+			local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
+			if part then
+				local dist = (hrp.Position - part.Position).Magnitude
 				if dist < shortestDist then
 					shortestDist = dist
-					closestObj = targetPart
+					closestTree = part
 				end
 			end
 		end
 	end
 
-	if closestObj then
-		hrp.CFrame = closestObj.CFrame * CFrame.new(0, 2, -3)
+	if closestTree then
+		-- Телепортируем рядом с деревом на уровне земли
+		hrp.CFrame = closestTree.CFrame * CFrame.new(2, 3, 2)
 	end
-end
-
--- Логика tp D. (Разовое нажатие)
-btnTpTree.MouseButton1Click:Connect(function()
-	tpToNearest({"tree", "древо", "дерево", "wood"})
 end)
 
--- Логика tp Z. (Разовое нажатие)
+-- Безопасный телепорт к зайцам (без падений)
 btnTpRabbit.MouseButton1Click:Connect(function()
-	tpToNearest({"rabbit", "hare", "заяц", "кролик", "bunny"})
+	local char = lp.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	local closestRabbit = nil
+	local shortestDist = math.huge
+
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		local name = string.lower(obj.Name)
+		if string.find(name, "rabbit") or string.find(name, "bunny") or string.find(name, "hare") then
+			-- Проверяем, что заяц живой (если у него есть Humanoid)
+			local hum = obj:FindFirstChildOfClass("Humanoid")
+			local part = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")
+			
+			if part and (not hum or hum.Health > 0) then
+				local dist = (hrp.Position - part.Position).Magnitude
+				if dist < shortestDist then
+					shortestDist = dist
+					closestRabbit = part
+				end
+			end
+		end
+	end
+
+	if closestRabbit then
+		-- Спавним персонажа чуть выше и в стороне, чтобы не проваливаться в текстуры зайца
+		hrp.CFrame = CFrame.new(closestRabbit.Position + Vector3.new(0, 4, 2))
+	end
 end)
 
--- Логика speedhack (Вкл/Выкл с изменением прозрачности)
+-- Speedhack x2.5
 local speedActive = false
 local normalSpeed = 16
-local targetSpeed = 40 -- Скорость х2.5 (16 * 2.5 = 40)
+local targetSpeed = 40
 
 btnSpeed.MouseButton1Click:Connect(function()
 	speedActive = not speedActive
