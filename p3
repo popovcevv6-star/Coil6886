@@ -1,23 +1,27 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-
 local lp = Players.LocalPlayer
 
+-- UI Parent
 local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomMenuGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = lp:WaitForChild("PlayerGui")
 
+-- Кнопка открытия (Кружок с молнией)
 local OpenBtn = Instance.new("TextButton")
 OpenBtn.Size = UDim2.new(0, 45, 0, 45)
-OpenBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
-OpenBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+OpenBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+OpenBtn.BackgroundTransparency = 0.5
 OpenBtn.Text = "⚡"
 OpenBtn.TextSize = 22
-OpenBtn.Parent = ScreenGui
+OpenBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
+OpenBtn.Font = Enum.Font.SourceSansLight
 OpenBtn.Active = true
 OpenBtn.Draggable = true
+OpenBtn.Parent = ScreenGui
 
 local OpenCorner = Instance.new("UICorner")
 OpenCorner.CornerRadius = UDim.new(1, 0)
@@ -27,22 +31,29 @@ local OpenStroke = Instance.new("UIStroke")
 OpenStroke.Thickness = 2
 OpenStroke.Parent = OpenBtn
 
+-- Главное меню (Полупрозрачное, серое)
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 220, 0, 260)
-MainFrame.Position = UDim2.new(0.4, 0, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Size = UDim2.new(0, 200, 0, 200)
+MainFrame.Position = UDim2.new(0.35, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MainFrame.BackgroundTransparency = 0.4
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
 
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
 MainStroke.Parent = MainFrame
 
+-- Качественная радужная обводка (только рамки)
 RunService.RenderStepped:Connect(function()
-	local hue = (tick() % 5) / 5
+	local hue = (tick() % 4) / 4
 	local rainbow = Color3.fromHSV(hue, 1, 1)
 	MainStroke.Color = rainbow
 	OpenStroke.Color = rainbow
@@ -57,203 +68,112 @@ Scroll.Size = UDim2.new(1, -10, 1, -10)
 Scroll.Position = UDim2.new(0, 5, 0, 5)
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
-Scroll.ScrollBarThickness = 4
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+Scroll.ScrollBarThickness = 3
 Scroll.Parent = MainFrame
 
 local UIList = Instance.new("UIListLayout")
 UIList.Parent = Scroll
 UIList.SortOrder = Enum.SortOrder.LayoutOrder
-UIList.Padding = UDim.new(0, 6)
+UIList.Padding = UDim.new(0, 8)
 
 UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	Scroll.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
 end)
 
+-- Конструктор кнопок
 local function createBtn(text)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -8, 0, 40)
-	btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	btn.Size = UDim2.new(1, -6, 0, 38)
+	btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	btn.BackgroundTransparency = 0.5
 	btn.BorderSizePixel = 0
-	btn.Text = text .. " [OFF]"
+	btn.Text = text
 	btn.Font = Enum.Font.SourceSansLight
-	btn.TextSize = 16
-	btn.TextColor3 = Color3.fromRGB(0, 170, 255)
+	btn.TextSize = 18
+	btn.TextColor3 = Color3.fromRGB(255, 0, 0)
 	btn.Parent = Scroll
 
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 1
-	stroke.Color = Color3.fromRGB(0, 170, 255)
-	stroke.Parent = btn
+	local btnCorner = Instance.new("UICorner")
+	btnCorner.CornerRadius = UDim.new(0, 6)
+	btnCorner.Parent = btn
 
 	return btn
 end
 
-local btnShaker = createBtn("camera shaker")
-local btnFling = createBtn("fling")
-local btnEsp = createBtn("esp")
-local btnSpin = createBtn("spinbot 360")
-local btnSpeed = createBtn("speed x2")
+local btnTpTree = createBtn("tp D.")
+local btnSpeed = createBtn("speedhack")
+local btnTpRabbit = createBtn("tp Z.")
 
-local shakerActive = false
+-- Поиск и телепорт к ближайшему объекту
+local function tpToNearest(searchNames)
+	local char = lp.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
 
-btnShaker.MouseButton1Click:Connect(function()
-	shakerActive = not shakerActive
-	btnShaker.Text = "camera shaker [" .. (shakerActive and "ON" or "OFF") .. "]"
-end)
+	local closestObj = nil
+	local shortestDist = math.huge
 
-RunService.RenderStepped:Connect(function()
-	if shakerActive then
-		local myChar = lp.Character
-		local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
-		if myHrp then
-			for _, p in ipairs(Players:GetPlayers()) do
-				if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-					local tHrp = p.Character.HumanoidRootPart
-					if (myHrp.Position - tHrp.Position).Magnitude <= 20 then
-						tHrp.CFrame = tHrp.CFrame * CFrame.Angles(
-							math.rad(math.random(-15, 15)),
-							math.rad(math.random(-15, 15)),
-							math.rad(math.random(-15, 15))
-						)
-					end
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		local matches = false
+		for _, name in ipairs(searchNames) do
+			if string.find(string.lower(obj.Name), string.lower(name)) then
+				matches = true
+				break
+			end
+		end
+
+		if matches then
+			local targetPart = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
+			if targetPart then
+				local dist = (hrp.Position - targetPart.Position).Magnitude
+				if dist < shortestDist then
+					shortestDist = dist
+					closestObj = targetPart
 				end
 			end
 		end
 	end
-end)
 
-local hiddenfling = false
-local flingThread
-
-if not ReplicatedStorage:FindFirstChild("AntiFlingDetection") then
-	local detection = Instance.new("Decal")
-	detection.Name = "AntiFlingDetection"
-	detection.Parent = ReplicatedStorage
-end
-
-local function fling()
-	local c, hrp, vel, movel = nil, nil, nil, 0.1
-
-	while hiddenfling do
-		RunService.Heartbeat:Wait()
-		c = lp.Character
-		hrp = c and c:FindFirstChild("HumanoidRootPart")
-
-		if hrp then
-			vel = hrp.Velocity
-			hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
-			RunService.RenderStepped:Wait()
-			hrp.Velocity = vel
-			RunService.Stepped:Wait()
-			hrp.Velocity = vel + Vector3.new(0, movel, 0)
-			movel = -movel
-		end
+	if closestObj then
+		hrp.CFrame = closestObj.CFrame * CFrame.new(0, 2, -3)
 	end
 end
 
-btnFling.MouseButton1Click:Connect(function()
-	hiddenfling = not hiddenfling
-	btnFling.Text = "fling [" .. (hiddenfling and "ON" or "OFF") .. "]"
-
-	if hiddenfling then
-		flingThread = coroutine.create(fling)
-		coroutine.resume(flingThread)
-	else
-		hiddenfling = false
-	end
+-- Логика tp D. (Разовое нажатие)
+btnTpTree.MouseButton1Click:Connect(function()
+	tpToNearest({"tree", "древо", "дерево", "wood"})
 end)
 
-local espActive = false
-
-local function getMM2Color(plr)
-	local char = plr.Character
-	if not char then return Color3.fromRGB(255, 255, 255) end
-
-	if char:FindFirstChild("Knife") or plr.Backpack:FindFirstChild("Knife") then
-		return Color3.fromRGB(255, 0, 0)
-	elseif char:FindFirstChild("Revolver") or plr.Backpack:FindFirstChild("Revolver") or char:FindFirstChild("Gun") or plr.Backpack:FindFirstChild("Gun") then
-		return Color3.fromRGB(0, 100, 255)
-	end
-
-	return Color3.fromRGB(255, 255, 255)
-end
-
-local function updateESP()
-	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= lp and plr.Character then
-			local char = plr.Character
-			local hl = char:FindFirstChild("ESPHighlight")
-
-			if espActive then
-				if not hl then
-					hl = Instance.new("Highlight")
-					hl.Name = "ESPHighlight"
-					hl.FillTransparency = 1
-					hl.OutlineTransparency = 0
-					hl.Adornee = char
-					hl.Parent = char
-				end
-				hl.OutlineColor = getMM2Color(plr)
-			else
-				if hl then
-					hl:Destroy()
-				end
-			end
-		end
-	end
-end
-
-RunService.RenderStepped:Connect(updateESP)
-
-btnEsp.MouseButton1Click:Connect(function()
-	espActive = not espActive
-	btnEsp.Text = "esp [" .. (espActive and "ON" or "OFF") .. "]"
-	if not espActive then
-		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr.Character and plr.Character:FindFirstChild("ESPHighlight") then
-				plr.Character.ESPHighlight:Destroy()
-			end
-		end
-	end
+-- Логика tp Z. (Разовое нажатие)
+btnTpRabbit.MouseButton1Click:Connect(function()
+	tpToNearest({"rabbit", "hare", "заяц", "кролик", "bunny"})
 end)
 
-local spinActive = false
-local spinAngle = 0
-
-btnSpin.MouseButton1Click:Connect(function()
-	spinActive = not spinActive
-	btnSpin.Text = "spinbot 360 [" .. (spinActive and "ON" or "OFF") .. "]"
-end)
-
-RunService.Heartbeat:Connect(function()
-	if spinActive then
-		local char = lp.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		if hrp then
-			spinAngle = spinAngle + 150
-			hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
-			hrp.AssemblyAngularVelocity = Vector3.new(0, 500, 0)
-		end
-	end
-end)
-
+-- Логика speedhack (Вкл/Выкл с изменением прозрачности)
 local speedActive = false
+local normalSpeed = 16
+local targetSpeed = 40 -- Скорость х2.5 (16 * 2.5 = 40)
 
 btnSpeed.MouseButton1Click:Connect(function()
 	speedActive = not speedActive
-	btnSpeed.Text = "speed x2 [" .. (speedActive and "ON" or "OFF") .. "]"
+	if speedActive then
+		btnSpeed.BackgroundTransparency = 0.1
+		btnSpeed.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	else
+		btnSpeed.BackgroundTransparency = 0.5
+		btnSpeed.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	end
 end)
 
 RunService.Heartbeat:Connect(function()
 	local char = lp.Character
-	local hum = char and char:FindFirstChild("Humanoid")
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
 	if hum then
 		if speedActive then
-			hum.WalkSpeed = 32
+			hum.WalkSpeed = targetSpeed
 		else
-			if hum.WalkSpeed == 32 then
-				hum.WalkSpeed = 16
+			if hum.WalkSpeed == targetSpeed then
+				hum.WalkSpeed = normalSpeed
 			end
 		end
 	end
