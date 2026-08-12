@@ -1,46 +1,45 @@
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local VIM = game:GetService("VirtualInputManager")
 local lp = Players.LocalPlayer
 
--- UI (Минимальное, чтобы не мешало)
+-- UI (Минималистичный)
 local ScreenGui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 120, 0, 50)
-MainFrame.Position = UDim2.new(0.5, -60, 0.2, 0) -- Вверху по центру
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.Size = UDim2.new(0, 150, 0, 50)
+MainFrame.Position = UDim2.new(0.5, -75, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.5
 MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame)
 
-local ToggleBtn = Instance.new("TextButton", MainFrame)
-ToggleBtn.Size = UDim2.new(0.9, 0, 0.8, 0)
-ToggleBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
-ToggleBtn.Text = "Clicker: OFF"
-ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", ToggleBtn)
+local Btn = Instance.new("TextButton", MainFrame)
+Btn.Size = UDim2.new(1, 0, 1, 0)
+Btn.Text = "OFF"
+Btn.TextColor3 = Color3.new(1, 1, 1)
+Btn.BackgroundTransparency = 1
 
--- Логика клика
 local active = false
 
-ToggleBtn.MouseButton1Click:Connect(function()
+Btn.MouseButton1Click:Connect(function()
     active = not active
-    ToggleBtn.Text = active and "Clicker: ON" or "Clicker: OFF"
-    ToggleBtn.BackgroundColor3 = active and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(60, 60, 60)
+    Btn.Text = active and "ON" or "OFF"
+    MainFrame.BackgroundColor3 = active and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(0, 0, 0)
 end)
 
--- Цикл кликов (Touch-событие для мобильных)
+-- Отдельный поток (чтобы не зависал)
 task.spawn(function()
     while true do
         if active then
-            -- Получаем центр экрана (динамически)
-            local viewportSize = workspace.CurrentCamera.ViewportSize
-            local x, y = viewportSize.X / 2, viewportSize.Y / 2
+            local pos = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
             
-            -- Имитируем нажатие пальцем
-            VirtualInputManager:SendTouchEvent(x, y, true, game)
-            task.wait(0.05)
-            VirtualInputManager:SendTouchEvent(x, y, false, game)
+            -- Выполняем клик
+            pcall(function()
+                VIM:SendTouchEvent(pos.X, pos.Y, true, game)
+                task.wait(0.05)
+                VIM:SendTouchEvent(pos.X, pos.Y, false, game)
+            end)
         end
-        task.wait(0.15) -- 0.2 сек задержка
+        task.wait(0.2) -- Задержка
     end
 end)
