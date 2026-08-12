@@ -1,57 +1,44 @@
--- Ninja Legends Universal Script
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local lp = Players.LocalPlayer
 
--- Универсальный поиск событий
-local Events = ReplicatedStorage:FindFirstChild("rEvents") or ReplicatedStorage:FindFirstChild("Events")
-local remotes = {}
+-- UI
+local ScreenGui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+ScreenGui.Name = "NinjaMenu"
 
-if Events then
-    for _, v in pairs(Events:GetChildren()) do
-        if v:IsA("RemoteEvent") then remotes[string.lower(v.Name)] = v end
-    end
-end
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 150, 0, 80)
+MainFrame.Position = UDim2.new(0.5, -75, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
--- Основные функции
-local function swing()
-    if remotes["swingtool"] then remotes["swingtool"]:FireServer()
-    elseif remotes["swing"] then remotes["swing"]:FireServer() end
-end
+local ToggleBtn = Instance.new("TextButton", MainFrame)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0.6, 0)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ToggleBtn.Text = "AutoClicker: OFF"
+ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", ToggleBtn)
 
-local function buy(item) -- item = "sword" или "belt"
-    if remotes["buysword"] and item == "sword" then remotes["buysword"]:FireServer()
-    elseif remotes["buybelt"] and item == "belt" then remotes["buybelt"]:FireServer() end
-end
+-- Логика Автокликера
+local autoclickActive = false
 
--- Авто-фарм (цикл)
+ToggleBtn.MouseButton1Click:Connect(function()
+    autoclickActive = not autoclickActive
+    ToggleBtn.Text = autoclickActive and "AutoClicker: ON" or "AutoClicker: OFF"
+    ToggleBtn.BackgroundColor3 = autoclickActive and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(60, 60, 60)
+end)
+
 task.spawn(function()
     while true do
-        swing()
-        buy("sword")
-        buy("belt")
+        if autoclickActive then
+            -- Имитация клика в центр экрана
+            local x, y = 500, 500 -- Координаты центра
+            VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
+            VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
+        end
         task.wait(0.2)
     end
 end)
-
--- ТП на последний остров
-local function tpToTop()
-    local islands = workspace:FindFirstChild("islands") or workspace
-    local best = nil
-    for _, v in pairs(islands:GetChildren()) do
-        if v:FindFirstChild("teleportpart") then
-            if not best or v:GetPivot().Position.Y > best:GetPivot().Position.Y then
-                best = v
-            end
-        end
-    end
-    if best then lp.Character:MoveTo(best:GetPivot().Position) end
-end
-
--- UI для телефона (сделаем максимально простым, чтобы не крашило)
-local ScreenGui = Instance.new("ScreenGui", lp.PlayerGui)
-local btn = Instance.new("TextButton", ScreenGui)
-btn.Size = UDim2.new(0, 100, 0, 50)
-btn.Position = UDim2.new(0.5, 0, 0.5, 0)
-btn.Text = "TP Top"
-btn.MouseButton1Click:Connect(tpToTop)
