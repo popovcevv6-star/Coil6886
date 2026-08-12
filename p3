@@ -1,134 +1,57 @@
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
+-- Ninja Legends Universal Script
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 
--- UI Parent
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NinjaMenuGui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = lp:WaitForChild("PlayerGui")
+-- Универсальный поиск событий
+local Events = ReplicatedStorage:FindFirstChild("rEvents") or ReplicatedStorage:FindFirstChild("Events")
+local remotes = {}
 
--- Кнопка открытия (Кружок с молнией)
-local OpenBtn = Instance.new("TextButton")
-OpenBtn.Size = UDim2.new(0, 45, 0, 45)
-OpenBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
-OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-OpenBtn.BackgroundTransparency = 0.5
-OpenBtn.Text = "⚡"
-OpenBtn.TextSize = 22
-OpenBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
-OpenBtn.Font = Enum.Font.SourceSansLight
-OpenBtn.Active = true
-OpenBtn.Draggable = true
-OpenBtn.Parent = ScreenGui
-Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0)
-local OpenStroke = Instance.new("UIStroke", OpenBtn)
-OpenStroke.Thickness = 2
-
--- Главное меню
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 200, 0, 250)
-MainFrame.Position = UDim2.new(0.35, 0, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-MainFrame.BackgroundTransparency = 0.4
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
-local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Thickness = 2
-
--- Радужная обводка
-RunService.RenderStepped:Connect(function()
-    local rainbow = Color3.fromHSV((tick() % 4) / 4, 1, 1)
-    MainStroke.Color = rainbow
-    OpenStroke.Color = rainbow
-end)
-
-OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
-
--- Скролл
-local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size = UDim2.new(1, -10, 1, -10)
-Scroll.Position = UDim2.new(0, 5, 0, 5)
-Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 3
-Instance.new("UIListLayout", Scroll).Padding = UDim.new(0, 8)
-
-local function createBtn(text)
-    local btn = Instance.new("TextButton", Scroll)
-    btn.Size = UDim2.new(1, -6, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    btn.BackgroundTransparency = 0.5
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 0, 0)
-    btn.Font = Enum.Font.SourceSansLight
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    return btn
+if Events then
+    for _, v in pairs(Events:GetChildren()) do
+        if v:IsA("RemoteEvent") then remotes[string.lower(v.Name)] = v end
+    end
 end
 
-local btnTopIsland = createBtn("TP Top Island")
-local btnCollectChi = createBtn("Collect Chi")
-local btnSwing = createBtn("Auto Swing")
-local btnBuy = createBtn("Auto Buy (Rem)")
+-- Основные функции
+local function swing()
+    if remotes["swingtool"] then remotes["swingtool"]:FireServer()
+    elseif remotes["swing"] then remotes["swing"]:FireServer() end
+end
 
--- Функции
-local events = ReplicatedStorage:WaitForChild("Events", 5)
+local function buy(item) -- item = "sword" или "belt"
+    if remotes["buysword"] and item == "sword" then remotes["buysword"]:FireServer()
+    elseif remotes["buybelt"] and item == "belt" then remotes["buybelt"]:FireServer() end
+end
 
--- 1. TP Top Island
-btnTopIsland.MouseButton1Click:Connect(function()
-    local islands = Workspace:FindFirstChild("Islands") or Workspace -- Ищем папку островов
-    local topPad = nil
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if string.find(string.lower(obj.Name), "island") and obj:FindFirstChild("TeleportPart") then
-            topPad = obj.TeleportPart
-        end
-    end
-    if topPad then lp.Character.HumanoidRootPart.CFrame = topPad.CFrame end
-end)
-
--- 2. Collect Chi
-btnCollectChi.MouseButton1Click:Connect(function()
-    local chiFolder = Workspace:FindFirstChild("Chi") or Workspace:FindFirstChild("ChiOrbs")
-    if chiFolder then
-        for _, orb in pairs(chiFolder:GetChildren()) do
-            if orb:FindFirstChild("CFrame") then orb.CFrame = lp.Character.HumanoidRootPart.CFrame end
-        end
-    end
-end)
-
--- 3. Auto Swing
-local swingActive = false
-btnSwing.MouseButton1Click:Connect(function()
-    swingActive = not swingActive
-    btnSwing.BackgroundTransparency = swingActive and 0.1 or 0.5
-end)
-
+-- Авто-фарм (цикл)
 task.spawn(function()
     while true do
-        if swingActive and events and events:FindFirstChild("SwingTool") then
-            events.SwingTool:FireServer()
-        end
-        task.wait(0.1)
+        swing()
+        buy("sword")
+        buy("belt")
+        task.wait(0.2)
     end
 end)
 
--- 4. Auto Buy
-local buyActive = false
-btnBuy.MouseButton1Click:Connect(function()
-    buyActive = not buyActive
-    btnBuy.BackgroundTransparency = buyActive and 0.1 or 0.5
-end)
-
-task.spawn(function()
-    while true do
-        if buyActive and events then
-            if events:FindFirstChild("BuySword") then events.BuySword:FireServer() end
-            if events:FindFirstChild("BuyBelt") then events.BuyBelt:FireServer() end
+-- ТП на последний остров
+local function tpToTop()
+    local islands = workspace:FindFirstChild("islands") or workspace
+    local best = nil
+    for _, v in pairs(islands:GetChildren()) do
+        if v:FindFirstChild("teleportpart") then
+            if not best or v:GetPivot().Position.Y > best:GetPivot().Position.Y then
+                best = v
+            end
         end
-        task.wait(1)
     end
-end)
+    if best then lp.Character:MoveTo(best:GetPivot().Position) end
+end
+
+-- UI для телефона (сделаем максимально простым, чтобы не крашило)
+local ScreenGui = Instance.new("ScreenGui", lp.PlayerGui)
+local btn = Instance.new("TextButton", ScreenGui)
+btn.Size = UDim2.new(0, 100, 0, 50)
+btn.Position = UDim2.new(0.5, 0, 0.5, 0)
+btn.Text = "TP Top"
+btn.MouseButton1Click:Connect(tpToTop)
