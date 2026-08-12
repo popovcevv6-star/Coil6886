@@ -1,15 +1,16 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local lp = Players.LocalPlayer
 
 -- UI Parent
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CustomMenuGui"
+ScreenGui.Name = "NinjaMenuGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = lp:WaitForChild("PlayerGui")
 
--- Кнопка открытия
+-- Кнопка открытия (Кружок с молнией)
 local OpenBtn = Instance.new("TextButton")
 OpenBtn.Size = UDim2.new(0, 45, 0, 45)
 OpenBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
@@ -22,14 +23,9 @@ OpenBtn.Font = Enum.Font.SourceSansLight
 OpenBtn.Active = true
 OpenBtn.Draggable = true
 OpenBtn.Parent = ScreenGui
-
-local OpenCorner = Instance.new("UICorner")
-OpenCorner.CornerRadius = UDim.new(1, 0)
-OpenCorner.Parent = OpenBtn
-
-local OpenStroke = Instance.new("UIStroke")
+Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0)
+local OpenStroke = Instance.new("UIStroke", OpenBtn)
 OpenStroke.Thickness = 2
-OpenStroke.Parent = OpenBtn
 
 -- Главное меню
 local MainFrame = Instance.new("Frame")
@@ -40,134 +36,99 @@ MainFrame.BackgroundTransparency = 0.4
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
-MainCorner.Parent = MainFrame
-
-local MainStroke = Instance.new("UIStroke")
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Thickness = 2
-MainStroke.Parent = MainFrame
 
 -- Радужная обводка
 RunService.RenderStepped:Connect(function()
-	local hue = (tick() % 4) / 4
-	local rainbow = Color3.fromHSV(hue, 1, 1)
-	MainStroke.Color = rainbow
-	OpenStroke.Color = rainbow
+    local rainbow = Color3.fromHSV((tick() % 4) / 4, 1, 1)
+    MainStroke.Color = rainbow
+    OpenStroke.Color = rainbow
 end)
 
-OpenBtn.MouseButton1Click:Connect(function()
-	MainFrame.Visible = not MainFrame.Visible
-end)
+OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- Прокрутка (Scrollable)
-local Scroll = Instance.new("ScrollingFrame")
+-- Скролл
+local Scroll = Instance.new("ScrollingFrame", MainFrame)
 Scroll.Size = UDim2.new(1, -10, 1, -10)
 Scroll.Position = UDim2.new(0, 5, 0, 5)
 Scroll.BackgroundTransparency = 1
-Scroll.BorderSizePixel = 0
-Scroll.ScrollBarThickness = 4
-Scroll.Parent = MainFrame
-
-local UIList = Instance.new("UIListLayout")
-UIList.Parent = Scroll
-UIList.SortOrder = Enum.SortOrder.LayoutOrder
-UIList.Padding = UDim.new(0, 8)
-
--- Функция обновления скролла
-UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	Scroll.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
-end)
+Scroll.ScrollBarThickness = 3
+Instance.new("UIListLayout", Scroll).Padding = UDim.new(0, 8)
 
 local function createBtn(text)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -10, 0, 35)
-	btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	btn.BackgroundTransparency = 0.5
-	btn.BorderSizePixel = 0
-	btn.Text = text
-	btn.Font = Enum.Font.SourceSansLight
-	btn.TextSize = 18
-	btn.TextColor3 = Color3.fromRGB(255, 0, 0)
-	btn.Parent = Scroll
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 6)
-	btnCorner.Parent = btn
-	return btn
+    local btn = Instance.new("TextButton", Scroll)
+    btn.Size = UDim2.new(1, -6, 0, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.BackgroundTransparency = 0.5
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 0, 0)
+    btn.Font = Enum.Font.SourceSansLight
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
 end
 
--- Кнопки
-local btnTpTree = createBtn("tp D.")
-local btnSpeed = createBtn("speedhack")
-local btnTpRabbit = createBtn("tp Z.")
-local btnChild1 = createBtn("tp Child 1")
-local btnChild2 = createBtn("tp Child 2")
-local btnChild3 = createBtn("tp Child 3")
-local btnChild4 = createBtn("tp Child 4")
+local btnTopIsland = createBtn("TP Top Island")
+local btnCollectChi = createBtn("Collect Chi")
+local btnSwing = createBtn("Auto Swing")
+local btnBuy = createBtn("Auto Buy (Rem)")
 
--- Универсальная функция ТП со строгой фильтрацией
-local function teleportStrict(includeWords, excludeWords)
-	local char = lp.Character
-	local hrp = char and char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
-	
-	local closestTarget = nil
-	local shortestDist = math.huge
-	
-	for _, obj in ipairs(Workspace:GetDescendants()) do
-		if obj:IsA("Model") then
-			local name = string.lower(obj.Name)
-			-- Проверка на включение
-			local matches = false
-			for _, w in ipairs(includeWords) do if string.find(name, w) then matches = true break end end
-			
-			-- Проверка на исключение
-			local excluded = false
-			for _, e in ipairs(excludeWords) do if string.find(name, e) then excluded = true break end end
-			
-			if matches and not excluded then
-				local part = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")
-				if part then
-					local dist = (hrp.Position - part.Position).Magnitude
-					if dist < shortestDist then
-						shortestDist = dist
-						closestTarget = part
-					end
-				end
-			end
-		end
-	end
-	
-	if closestTarget then
-		hrp.CFrame = closestTarget.CFrame + Vector3.new(0, 3, 0)
-	end
-end
+-- Функции
+local events = ReplicatedStorage:WaitForChild("Events", 5)
 
--- Логика кнопок
-btnTpTree.MouseButton1Click:Connect(function()
-	teleportStrict({"tree", "birch", "pine"}, {"rabbit", "child", "bush", "fire", "camp", "storage"})
+-- 1. TP Top Island
+btnTopIsland.MouseButton1Click:Connect(function()
+    local islands = Workspace:FindFirstChild("Islands") or Workspace -- Ищем папку островов
+    local topPad = nil
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if string.find(string.lower(obj.Name), "island") and obj:FindFirstChild("TeleportPart") then
+            topPad = obj.TeleportPart
+        end
+    end
+    if topPad then lp.Character.HumanoidRootPart.CFrame = topPad.CFrame end
 end)
 
-btnTpRabbit.MouseButton1Click:Connect(function()
-	teleportStrict({"rabbit", "bunny", "hare"}, {"tree", "child", "bush", "fire", "camp"})
+-- 2. Collect Chi
+btnCollectChi.MouseButton1Click:Connect(function()
+    local chiFolder = Workspace:FindFirstChild("Chi") or Workspace:FindFirstChild("ChiOrbs")
+    if chiFolder then
+        for _, orb in pairs(chiFolder:GetChildren()) do
+            if orb:FindFirstChild("CFrame") then orb.CFrame = lp.Character.HumanoidRootPart.CFrame end
+        end
+    end
 end)
 
-btnChild1.MouseButton1Click:Connect(function() teleportStrict({"child1"}, {"tree", "rabbit", "bush"}) end)
-btnChild2.MouseButton1Click:Connect(function() teleportStrict({"child2"}, {"tree", "rabbit", "bush"}) end)
-btnChild3.MouseButton1Click:Connect(function() teleportStrict({"child3"}, {"tree", "rabbit", "bush"}) end)
-btnChild4.MouseButton1Click:Connect(function() teleportStrict({"child4"}, {"tree", "rabbit", "bush"}) end)
-
--- Speedhack
-local speedActive = false
-btnSpeed.MouseButton1Click:Connect(function()
-	speedActive = not speedActive
-	btnSpeed.BackgroundTransparency = speedActive and 0.1 or 0.5
+-- 3. Auto Swing
+local swingActive = false
+btnSwing.MouseButton1Click:Connect(function()
+    swingActive = not swingActive
+    btnSwing.BackgroundTransparency = swingActive and 0.1 or 0.5
 end)
 
-RunService.Heartbeat:Connect(function()
-	local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
-	if hum then hum.WalkSpeed = speedActive and 40 or 16 end
+task.spawn(function()
+    while true do
+        if swingActive and events and events:FindFirstChild("SwingTool") then
+            events.SwingTool:FireServer()
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- 4. Auto Buy
+local buyActive = false
+btnBuy.MouseButton1Click:Connect(function()
+    buyActive = not buyActive
+    btnBuy.BackgroundTransparency = buyActive and 0.1 or 0.5
+end)
+
+task.spawn(function()
+    while true do
+        if buyActive and events then
+            if events:FindFirstChild("BuySword") then events.BuySword:FireServer() end
+            if events:FindFirstChild("BuyBelt") then events.BuyBelt:FireServer() end
+        end
+        task.wait(1)
+    end
 end)
