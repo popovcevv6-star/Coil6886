@@ -264,8 +264,10 @@ end)
 
 local function removeEsp(plr)
     if plr.Character then
-        local old = plr.Character:FindFirstChild("ESPSelectionBox")
-        if old then old:Destroy() end
+        local oldBox = plr.Character:FindFirstChild("ESPSelectionBox")
+        if oldBox then oldBox:Destroy() end
+        local oldHL = plr.Character:FindFirstChild("ESPHighlight")
+        if oldHL then oldHL:Destroy() end
     end
 end
 
@@ -276,14 +278,16 @@ RunService.RenderStepped:Connect(function()
                 local char = plr.Character
                 local hum = char:FindFirstChild("Humanoid")
                 if hum and hum.Health > 0 then
-                    local sBox = char:FindFirstChild("ESPSelectionBox")
-                    if not sBox then
-                        sBox = Instance.new("SelectionBox")
-                        sBox.Name = "ESPSelectionBox"
-                        sBox.Adornee = char
-                        sBox.LineThickness = 0.04
-                        sBox.Color3 = Color3.fromRGB(255, 255, 255)
-                        sBox.Parent = char
+                    local hl = char:FindFirstChild("ESPHighlight")
+                    if not hl then
+                        hl = Instance.new("Highlight")
+                        hl.Name = "ESPHighlight"
+                        hl.Adornee = char
+                        hl.FillTransparency = 0.5
+                        hl.FillColor = Color3.fromRGB(255, 255, 255)
+                        hl.OutlineColor = Color3.fromRGB(0, 191, 255)
+                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        hl.Parent = char
                     end
                 else
                     removeEsp(plr)
