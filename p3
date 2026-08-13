@@ -1,45 +1,316 @@
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local VIM = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
 local lp = Players.LocalPlayer
 
--- UI (Минималистичный)
-local ScreenGui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 150, 0, 50)
-MainFrame.Position = UDim2.new(0.5, -75, 0.2, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-MainFrame.BackgroundTransparency = 0.5
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame)
+if CoreGui:FindFirstChild("WermanDeltaMenu") then
+    CoreGui.WermanDeltaMenu:Destroy()
+end
 
-local Btn = Instance.new("TextButton", MainFrame)
-Btn.Size = UDim2.new(1, 0, 1, 0)
-Btn.Text = "OFF"
-Btn.TextColor3 = Color3.new(1, 1, 1)
-Btn.BackgroundTransparency = 1
+local states = {
+    fly = false,
+    fling = false,
+    esp = false,
+    speed = false,
+    spin = false
+}
 
-local active = false
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "WermanDeltaMenu"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
 
-Btn.MouseButton1Click:Connect(function()
-    active = not active
-    Btn.Text = active and "ON" or "OFF"
-    MainFrame.BackgroundColor3 = active and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(0, 0, 0)
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+ToggleBtn.Position = UDim2.new(0, 50, 0, 50)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleBtn.BackgroundTransparency = 0.4
+ToggleBtn.Text = "⚡"
+ToggleBtn.TextColor3 = Color3.fromRGB(0, 191, 255)
+ToggleBtn.TextSize = 24
+ToggleBtn.Parent = ScreenGui
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(1, 0)
+btnCorner.Parent = ToggleBtn
+
+local dragToggle = nil
+local dragInput = nil
+local dragStart = nil
+local startPos = nil
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+ToggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = true
+        dragStart = input.Position
+        startPos = ToggleBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragToggle = false
+            end
+        end)
+    end
 end)
 
--- Отдельный поток (чтобы не зависал)
-task.spawn(function()
-    while true do
-        if active then
-            local pos = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
-            
-            -- Выполняем клик
-            pcall(function()
-                VIM:SendTouchEvent(pos.X, pos.Y, true, game)
-                task.wait(0.05)
-                VIM:SendTouchEvent(pos.X, pos.Y, false, game)
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if dragToggle then
+            updateInput(input)
+        end
+    end
+end)
+
+local OuterBorder1 = Instance.new("Frame")
+OuterBorder1.Name = "MenuMain"
+OuterBorder1.Size = UDim2.new(0, 234, 0, 324)
+OuterBorder1.Position = UDim2.new(0.5, -117, 0.5, -162)
+OuterBorder1.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+OuterBorder1.BorderSizePixel = 0
+OuterBorder1.Active = true
+OuterBorder1.Visible = false
+OuterBorder1.Parent = ScreenGui
+
+local UICorner1 = Instance.new("UICorner")
+UICorner1.CornerRadius = UDim.new(0, 16)
+UICorner1.Parent = OuterBorder1
+
+local RainbowFrame = Instance.new("Frame")
+RainbowFrame.Size = UDim2.new(1, -4, 1, -4)
+RainbowFrame.Position = UDim2.new(0, 2, 0, 2)
+RainbowFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+RainbowFrame.BorderSizePixel = 0
+RainbowFrame.Parent = OuterBorder1
+
+local UICorner2 = Instance.new("UICorner")
+UICorner2.CornerRadius = UDim.new(0, 14)
+UICorner2.Parent = RainbowFrame
+
+local OuterBorder2 = Instance.new("Frame")
+OuterBorder2.Size = UDim2.new(1, -6, 1, -6)
+OuterBorder2.Position = UDim2.new(0, 3, 0, 3)
+OuterBorder2.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+OuterBorder2.BorderSizePixel = 0
+OuterBorder2.Parent = RainbowFrame
+
+local UICorner3 = Instance.new("UICorner")
+UICorner3.CornerRadius = UDim.new(0, 12)
+UICorner3.Parent = OuterBorder2
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(1, -4, 1, -4)
+MainFrame.Position = UDim2.new(0, 2, 0, 2)
+MainFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+MainFrame.BackgroundTransparency = 0.3
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = OuterBorder2
+
+local UICorner4 = Instance.new("UICorner")
+UICorner4.CornerRadius = UDim.new(0, 10)
+UICorner4.Parent = MainFrame
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Header.BackgroundTransparency = 0.1
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ᴡᴇʀᴍᴀɴ.ᴅᴇʟᴛᴀ"
+Title.TextColor3 = Color3.fromRGB(0, 191, 255)
+Title.TextSize = 18
+Title.Font = Enum.Font.SourceSansBold
+Title.Parent = Header
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    OuterBorder1.Visible = not OuterBorder1.Visible
+end)
+
+local function makeDraggable(obj)
+    local dragInput, dragStart, startPos
+    obj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragStart = input.Position
+            startPos = obj.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragInput = nil
+                end
             end)
         end
-        task.wait(0.2) -- Задержка
+    end)
+    obj.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragStart then
+            local delta = input.Position - dragStart
+            obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+makeDraggable(OuterBorder1)
+
+local ScrollContainer = Instance.new("ScrollingFrame")
+ScrollContainer.Size = UDim2.new(1, -16, 1, -50)
+ScrollContainer.Position = UDim2.new(0, 8, 0, 45)
+ScrollContainer.BackgroundTransparency = 1
+ScrollContainer.BorderSizePixel = 0
+ScrollContainer.ScrollBarThickness = 0
+ScrollContainer.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ScrollContainer
+UIListLayout.Padding = UDim.new(0, 8)
+
+local hue = 0
+RunService.RenderStepped:Connect(function(delta)
+    hue = (hue + delta * 1.5) % 1
+    RainbowFrame.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+end)
+
+local function createButton(nameText, stateKey)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    btn.BackgroundTransparency = 0.5
+    btn.BorderSizePixel = 0
+    btn.Text = nameText
+    btn.TextColor3 = Color3.fromRGB(0, 191, 255)
+    btn.TextSize = 16
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = ScrollContainer
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+
+    btn.MouseButton1Click:Connect(function()
+        states[stateKey] = not states[stateKey]
+        btn.BackgroundTransparency = states[stateKey] and 0.75 or 0.5
+    end)
+end
+
+createButton("ғʟʏ", "fly")
+createButton("ʜɪᴅᴅᴇɴ ғʟɪɴɢ", "fling")
+createButton("ᴇsᴘ", "esp")
+createButton("sᴘᴇᴇᴅ", "speed")
+createButton("sᴘɪɴʙᴏᴛ", "spin")
+
+local bodyVelocity, bodyGyro
+RunService.RenderStepped:Connect(function()
+    if states.fly then
+        local char = lp.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        if root and humanoid then
+            if not bodyVelocity then
+                bodyVelocity = Instance.new("BodyVelocity")
+                bodyVelocity.MaxForce = Vector3.new(4e5, 4e5, 4e5)
+                bodyVelocity.Velocity = Vector3.zero
+                bodyVelocity.Parent = root
+            end
+            if not bodyGyro then
+                bodyGyro = Instance.new("BodyGyro")
+                bodyGyro.MaxTorque = Vector3.new(4e5, 4e5, 4e5)
+                bodyGyro.P = 10000
+                bodyGyro.D = 100
+                bodyGyro.CFrame = root.CFrame
+                bodyGyro.Parent = root
+            end
+            local cam = workspace.CurrentCamera
+            bodyGyro.CFrame = cam.CFrame
+            bodyVelocity.Velocity = humanoid.MoveDirection.Magnitude > 0 and cam.CFrame.LookVector * 50 or Vector3.zero
+        end
+    else
+        if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+        if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    end
+end)
+
+task.spawn(function()
+    local movel = 0.1
+    while true do
+        RunService.Heartbeat:Wait()
+        if states.fling then
+            local c = lp.Character
+            local hrp = c and c:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local vel = hrp.Velocity
+                hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                RunService.RenderStepped:Wait()
+                hrp.Velocity = vel
+                RunService.Stepped:Wait()
+                hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                movel = -movel
+            end
+        end
+    end
+end)
+
+local function removeEsp(plr)
+    if plr.Character then
+        local old = plr.Character:FindFirstChild("ESPSelectionBox")
+        if old then old:Destroy() end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= lp then
+            if states.esp and plr.Character then
+                local char = plr.Character
+                local hum = char:FindFirstChild("Humanoid")
+                if hum and hum.Health > 0 then
+                    local sBox = char:FindFirstChild("ESPSelectionBox")
+                    if not sBox then
+                        sBox = Instance.new("SelectionBox")
+                        sBox.Name = "ESPSelectionBox"
+                        sBox.Adornee = char
+                        sBox.LineThickness = 0.04
+                        sBox.Color3 = Color3.fromRGB(255, 255, 255)
+                        sBox.Parent = char
+                    end
+                else
+                    removeEsp(plr)
+                end
+            else
+                removeEsp(plr)
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if states.speed then
+        local hum = lp.Character and lp.Character:FindFirstChild("Humanoid")
+        if hum then hum.WalkSpeed = 40 end
+    end
+end)
+
+local spinAngle = 0
+RunService.Heartbeat:Connect(function()
+    if states.spin then
+        local char = lp.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            spinAngle = spinAngle + 150
+            hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
+            hrp.AssemblyAngularVelocity = Vector3.new(0, 500, 0)
+        end
     end
 end)
